@@ -9,6 +9,8 @@
 - Never delete browser cookies, login databases, extension stores, history databases, wallet files, license files, save-game folders, config folders, or documents.
 - Prefer deleting cache contents over deleting the parent cache directory.
 - Keep recent files by default using `--min-age-days 7`.
+- Developer package caches are allowed only for tool-owned cache/store directories, never project directories.
+- Large size alone is never a deletion signal. Use size to prioritize manual review, then require a cache allowlist or explicit user decision.
 
 ## High-Risk Names
 
@@ -29,6 +31,35 @@ These names are usually safe only when they are below an application data root o
 - `temp`, `tmp`
 - `logs`, `crashdumps`
 - `downloadcache`, `webcache`
+- `npm-cache`, `_cacache`, `.cache`
+
+## Developer Cache Notes
+
+Safe candidates include package-manager cache or store contents owned by the tool:
+
+- `uv`: `%LOCALAPPDATA%\uv\cache`
+- `pip`: `%LOCALAPPDATA%\pip\Cache`
+- `npm`: `%APPDATA%\npm-cache` or `%LOCALAPPDATA%\npm-cache`
+- `pnpm`: `%LOCALAPPDATA%\pnpm\store`
+- `yarn`: `%LOCALAPPDATA%\Yarn\Cache`
+- `NuGet`: `%USERPROFILE%\.nuget\packages`
+- `Cargo`: `%USERPROFILE%\.cargo\registry\cache` and `%USERPROFILE%\.cargo\git\checkouts`
+- `Gradle`: `%USERPROFILE%\.gradle\caches`
+
+Do not delete `node_modules`, virtual environments, project `.venv` folders, lockfiles, source worktrees, npm global package bins, package manager config files, or credential files.
+
+## Large Item Review
+
+Use `--large-path` to imitate a SpaceSniffer-style review workflow. The script should list large direct children of the selected path, classify them, and keep them outside the deletion plan unless they also match a specific allowlisted cache rule.
+
+Use `--large-max-seconds` to keep large scans bounded. Entries with `partial_size: true` are incomplete measurements and should be treated as "large enough to investigate", not exact totals.
+
+Suggested interpretation:
+
+- `review-cache`: cache-like name; likely safe only after path review.
+- `review-temp`: temporary, log, dump, backup, or old file; likely safe only after path review.
+- `manual-review`: unknown large item; ask the user or inspect contents before deleting.
+- `skip`: protected, symlink, junction, or otherwise unsafe.
 
 ## Ubisoft / Rainbow Six Notes
 

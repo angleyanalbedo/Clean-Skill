@@ -1,6 +1,6 @@
 ---
 name: windows-safe-cleaner
-description: Safely scan and clean Windows AppData, LocalAppData, temp folders, logs, launcher caches, game download caches, and leftover application cache files. Use when Codex is asked to remove Windows junk files, reclaim disk space, clean AppData after uninstalling software, inspect cache bloat such as Ubisoft/Rainbow Six download cache, or design a cautious cleanup plan with dry-run reporting before deletion.
+description: Safely scan and clean Windows AppData, LocalAppData, temp folders, logs, launcher caches, game download caches, developer tool caches such as uv, pip, npm, pnpm, yarn, NuGet, Cargo, and Gradle, and leftover application cache files. Use when Codex is asked to remove Windows junk files, reclaim disk space, clean AppData after uninstalling software, inspect cache bloat such as Ubisoft/Rainbow Six download cache, clean package manager caches, or design a cautious cleanup plan with dry-run reporting before deletion.
 ---
 
 # Windows Safe Cleaner
@@ -37,6 +37,7 @@ Default scope is the current Windows user only:
 - `%LOCALAPPDATA%\Temp`
 - known app cache folders below `%LOCALAPPDATA%`
 - known launcher cache folders, including Ubisoft Connect cache locations when present
+- developer tool caches, including `uv`, `pip`, `npm`, `pnpm`, `yarn`, `NuGet`, `Cargo`, and `Gradle`
 - logs, crash dumps, thumbnail caches, GPU/shader/code caches
 
 Do not clean `%PROGRAMDATA%` unless the user asks and understands it may require administrator permissions:
@@ -57,6 +58,12 @@ For broader AppData discovery, use `--discover-caches` in dry-run first. This se
 python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report .\cleanup-report.json
 ```
 
+For a SpaceSniffer-like size review, inspect large direct children of a path. This only reports large files/directories and never adds arbitrary large items to the deletion plan:
+
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 512 --large-max-seconds 30 --report .\cleanup-report.json
+```
+
 ## Safety Defaults
 
 - Dry-run by default.
@@ -65,6 +72,8 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --re
 - Skip symbolic links and reparse points.
 - Skip protected locations, including Windows, Program Files, user profile root, AppData roots, Documents, Desktop, Downloads, Pictures, Videos, Music, OneDrive, game saves, and browser profile data.
 - Delete contents of allowlisted cache directories, not arbitrary parent directories.
+- Treat large files and directories as review items unless they also match an allowlisted cache rule.
+- Treat `partial_size: true` large review entries as incomplete measurements caused by the inspection time budget.
 - Treat failed deletion as non-fatal and report it.
 
 ## Common Requests
@@ -72,6 +81,8 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --re
 - "Clean AppData junk": dry-run default user scope, then ask before execute.
 - "Remove leftovers after uninstalling software": scan first; if a leftover vendor directory contains configs, saves, licenses, or databases, do not delete automatically.
 - "Clean Rainbow Six / Ubisoft download cache": scan known Ubisoft cache paths; if the user gives a custom launcher/download cache path, add it with `--extra-path` and dry-run first.
+- "Clean uv/pip/npm caches": use the default scan; developer cache rules are allowlisted and still age-gated.
+- "Find what is taking space like SpaceSniffer": use `--large-path` and summarize `large_items` by size and classification; do not delete arbitrary large files automatically.
 - "Just delete it": still run dry-run first unless the user provides a recent report and explicit approval.
 
 ## Reporting Expectations
@@ -83,6 +94,7 @@ Report:
 - rule/category counts
 - skipped unsafe paths
 - paths requiring manual review
+- large review items and why they are or are not safe candidates
 - exact command needed for approved deletion
 
 Avoid claiming space was reclaimed until the execute run confirms it.
