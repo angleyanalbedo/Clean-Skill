@@ -1,0 +1,3 @@
+display_name: Windows Safe Cleaner
+short_description: Safe Windows cache cleanup
+default_prompt: Scan Windows AppData and cache folders safely, produce a dry-run report, and only delete allowlisted cache files after confirmation.
