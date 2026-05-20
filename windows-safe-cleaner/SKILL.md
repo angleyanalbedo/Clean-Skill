@@ -31,21 +31,35 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --execute --yes --repo
 
 ## Cleanup Scope
 
-Focus on **AppData cache directories** - this is where the real disk space is consumed:
+Focus on **AppData cache directories** - this is where the real disk space is consumed.
 
-**Primary Targets (AppData Cache):**
-- Browser caches: Chrome, Edge, Firefox
-- Game launchers: Ubisoft Connect, Steam, Epic, EA
-- Developer tools: npm, yarn, pnpm, pip, uv, Cargo, Gradle, NuGet
-- Application caches: VS Code, JetBrains, Adobe, Office
+**Default rules cover 77+ common cache locations** across these categories:
 
-**Secondary Targets (System):**
-- Windows Error Reports: `%LOCALAPPDATA%\Microsoft\Windows\WER`
-- Shader caches: NVIDIA GL cache, DirectX shader cache
-- Crash dumps: `%LOCALAPPDATA%\CrashDumps`
-- Thumbnail caches: `%LOCALAPPDATA%\Microsoft\Windows\Explorer`
+**Browser Caches:**
+- Chrome, Edge, Firefox
 
-**Note:** `%TEMP%` is typically small (<100MB) and not worth scanning. Focus on `%LOCALAPPDATA%` and `%APPDATA%` for meaningful cleanup.
+**Game Launchers:**
+- Steam, Epic, Ubisoft, EA, Battle.net, Minecraft
+
+**Developer Tools:**
+- npm, yarn, pnpm, pip, uv, Cargo, Gradle, NuGet
+- Rustup, Deno, Swift, Dart pub, Go modules
+- VS Code, JetBrains IDEs, Visual Studio, Qt
+
+**Microsoft Apps:**
+- OneDrive, Teams, Office, OneNote
+
+**Communication Apps:**
+- Discord, Slack, Zoom, DingTalk, Telegram, QQ
+
+**Media Apps:**
+- Spotify, OBS, Figma, Notion
+
+**Utilities:**
+- Adobe, WPS, 7-Zip, Bandizip, OBS
+
+**System:**
+- Windows Error Reports, Shader caches, Thumbnail caches
 
 Do not clean `%PROGRAMDATA%` unless the user asks and understands it may require administrator permissions:
 
