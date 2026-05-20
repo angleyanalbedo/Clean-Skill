@@ -542,10 +542,19 @@ def main() -> int:
     parser.add_argument("--large-max-seconds", type=int, default=30, help="Time budget for large-path inspection.")
     parser.add_argument("--min-age-days", type=int, default=7, help="Only include items at least this many days old.")
     parser.add_argument("--report", default="cleanup-report.json", help="Write JSON report to this path.")
+    parser.add_argument("--full-scan", action="store_true", help="Full AppData scan like SpaceSniffer: scan all of LocalAppData and RoamingAppData, report all items >=1MB.")
     args = parser.parse_args()
 
     if os.name != "nt":
         raise SystemExit("This cleaner is intended for Windows only.")
+    
+    if args.full_scan:
+        args.large_path = [env_path("LOCALAPPDATA"), env_path("APPDATA")]
+        args.large_path = [str(p) for p in args.large_path if p]
+        args.min_size_mb = 1
+        args.top = 10000
+        args.large_max_seconds = 300
+    
     if args.min_age_days < 0:
         raise SystemExit("--min-age-days cannot be negative.")
     if args.min_size_mb < 0:

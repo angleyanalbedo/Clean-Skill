@@ -113,9 +113,26 @@ The cleaner automatically classifies large files based on extension and path:
 
 ## Large File Cleanup Commands
 
-**Find large items in AppData (SpaceSniffer-like):**
+**SpaceSniffer-style Full Scan (Recommended):**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --full-scan --report .\full-scan-report.json
+```
+
+This scans entire LocalAppData and RoamingAppData, reports ALL items >= 1MB (up to 10000 items), and classifies each by safety level.
+
+**Find large items in specific path:**
 ```powershell
 python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 512 --report .\cleanup-report.json
+```
+
+**Custom full scan:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --large-path "$env:APPDATA" --min-size-mb 1 --top 10000 --report .\cleanup-report.json
+```
+
+**After reviewing the report, clean specific paths:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\Chrome\Cache" --extra-path "$env:LOCALAPPDATA\discord" --execute --yes --report .\cleanup-report.json
 ```
 
 **Find large items in entire user profile:**
