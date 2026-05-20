@@ -31,14 +31,21 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --execute --yes --repo
 
 ## Cleanup Scope
 
-Default scope is the current Windows user only:
+Focus on **AppData cache directories** - this is where the real disk space is consumed:
 
-- `%TEMP%`
-- `%LOCALAPPDATA%\Temp`
-- known app cache folders below `%LOCALAPPDATA%`
-- known launcher cache folders, including Ubisoft Connect cache locations when present
-- developer tool caches, including `uv`, `pip`, `npm`, `pnpm`, `yarn`, `NuGet`, `Cargo`, and `Gradle`
-- logs, crash dumps, thumbnail caches, GPU/shader/code caches
+**Primary Targets (AppData Cache):**
+- Browser caches: Chrome, Edge, Firefox
+- Game launchers: Ubisoft Connect, Steam, Epic, EA
+- Developer tools: npm, yarn, pnpm, pip, uv, Cargo, Gradle, NuGet
+- Application caches: VS Code, JetBrains, Adobe, Office
+
+**Secondary Targets (System):**
+- Windows Error Reports: `%LOCALAPPDATA%\Microsoft\Windows\WER`
+- Shader caches: NVIDIA GL cache, DirectX shader cache
+- Crash dumps: `%LOCALAPPDATA%\CrashDumps`
+- Thumbnail caches: `%LOCALAPPDATA%\Microsoft\Windows\Explorer`
+
+**Note:** `%TEMP%` is typically small (<100MB) and not worth scanning. Focus on `%LOCALAPPDATA%` and `%APPDATA%` for meaningful cleanup.
 
 Do not clean `%PROGRAMDATA%` unless the user asks and understands it may require administrator permissions:
 
@@ -52,10 +59,21 @@ For a specific suspected cache path, use `--extra-path` only after checking it i
 python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "C:\path\to\cache" --report .\cleanup-report.json
 ```
 
-For broader AppData discovery, use `--discover-caches` in dry-run first. This searches for cache-like directory names under user AppData roots and still applies protected-path, age, and reparse-point checks:
+**Recommended Workflow for Finding Large Caches:**
 
+1. Discover all cache directories first:
 ```powershell
-python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report .\cleanup-report.json
+python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report discovered.json
+```
+
+2. Find large items in AppData:
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 100 --report large-caches.json
+```
+
+3. Scan specific large cache directories:
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\MyApp\cache" --report cleanup.json
 ```
 
 ## Large File Detection & Classification
@@ -115,12 +133,12 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --la
 
 ## Common Requests
 
-- "Clean AppData junk": dry-run default user scope, then ask before execute.
-- "Remove leftovers after uninstalling software": scan first; if a leftover vendor directory contains configs, saves, licenses, or databases, do not delete automatically.
-- "Clean Rainbow Six / Ubisoft download cache": scan known Ubisoft cache paths; if the user gives a custom launcher/download cache path, add it with `--extra-path` and dry-run first.
-- "Clean uv/pip/npm caches": use the default scan; developer cache rules are allowlisted and still age-gated.
-- "Find what is taking space like SpaceSniffer": use `--large-path` and summarize `large_items` by size and classification; do not delete arbitrary large files automatically.
-- "Just delete it": still run dry-run first unless the user provides a recent report and explicit approval.
+- "C盘满了/什么占用了最多空间": use `--discover-caches` and `--large-path "$env:LOCALAPPDATA"` to find large cache directories, summarize by size.
+- "Clean browser/app cache": scan AppData for known cache paths; do not delete configs, cookies, or saved passwords.
+- "Remove leftovers after uninstalling software": use `--discover-caches` to find orphaned cache directories; if a directory contains configs, saves, licenses, or databases, do not delete automatically.
+- "Clean Rainbow Six / Ubisoft / Steam cache": scan known launcher cache paths; if the user provides a custom path, use `--extra-path` and dry-run first.
+- "Clean uv/pip/npm/cargo caches": use the default scan; developer cache rules are allowlisted and still age-gated.
+- "Just clean everything": still run dry-run first; use `--discover-caches` to find all cache-like directories.
 
 ## Reporting Expectations
 
