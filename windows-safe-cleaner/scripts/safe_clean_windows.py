@@ -71,15 +71,11 @@ class Rule:
 
 
 RULES: tuple[Rule, ...] = (
-    Rule("user-temp", "temp", "TEMP", ()),
-    Rule("local-temp", "temp", "LOCALAPPDATA", ("Temp",)),
     Rule("windows-error-reports", "crash", "LOCALAPPDATA", ("Microsoft", "Windows", "WER", "ReportArchive")),
     Rule("windows-error-queue", "crash", "LOCALAPPDATA", ("Microsoft", "Windows", "WER", "ReportQueue")),
     Rule("directx-shader-cache", "shader", "LOCALAPPDATA", ("D3DSCache",)),
     Rule("nvidia-gl-cache", "shader", "LOCALAPPDATA", ("NVIDIA", "GLCache")),
-    Rule("ubisoft-cache", "launcher-cache", "LOCALAPPDATA", ("Ubisoft Game Launcher", "cache")),
-    Rule("ubisoft-webcache", "launcher-cache", "LOCALAPPDATA", ("Ubisoft Game Launcher", "webcache")),
-    Rule("ubisoft-programdata-cache", "launcher-cache", "PROGRAMDATA", ("Ubisoft", "Ubisoft Game Launcher", "cache"), programdata=True),
+    Rule("thumbnail-cache", "cache", "LOCALAPPDATA", ("Microsoft", "Windows", "Explorer")),
     Rule("pip-cache", "developer-cache", "LOCALAPPDATA", ("pip", "Cache")),
     Rule("uv-cache", "developer-cache", "LOCALAPPDATA", ("uv", "cache")),
     Rule("npm-cache", "developer-cache", "APPDATA", ("npm-cache",)),
@@ -90,6 +86,68 @@ RULES: tuple[Rule, ...] = (
     Rule("cargo-registry-cache", "developer-cache", "USERPROFILE", (".cargo", "registry", "cache")),
     Rule("cargo-git-checkouts", "developer-cache", "USERPROFILE", (".cargo", "git", "checkouts")),
     Rule("gradle-caches", "developer-cache", "USERPROFILE", (".gradle", "caches")),
+    Rule("vscode-cache", "app-cache", "LOCALAPPDATA", ("Code", "Cache")),
+    Rule("vscode-gpu-cache", "app-cache", "LOCALAPPDATA", ("Code", "GPUCache")),
+    Rule("vscode-crashpad", "app-cache", "LOCALAPPDATA", ("Code", "Crashpad", "reports")),
+    Rule("chrome-cache", "browser-cache", "LOCALAPPDATA", ("Google", "Chrome", "User Data", "Default", "Cache")),
+    Rule("chrome-code-cache", "browser-cache", "LOCALAPPDATA", ("Google", "Chrome", "User Data", "Default", "Code Cache")),
+    Rule("chrome-gpu-cache", "browser-cache", "LOCALAPPDATA", ("Google", "Chrome", "User Data", "Default", "GPUCache")),
+    Rule("edge-cache", "browser-cache", "LOCALAPPDATA", ("Microsoft", "Edge", "User Data", "Default", "Cache")),
+    Rule("edge-code-cache", "browser-cache", "LOCALAPPDATA", ("Microsoft", "Edge", "User Data", "Default", "Code Cache")),
+    Rule("firefox-cache", "browser-cache", "LOCALAPPDATA", ("Mozilla", "Firefox", "Profiles")),
+    Rule("discord-cache", "app-cache", "LOCALAPPDATA", ("discord")),
+    Rule("discord-media", "app-cache", "LOCALAPPDATA", ("discord", "MediaChannelCache")),
+    Rule("steam-cache", "game-cache", "LOCALAPPDATA", ("Steam", "htmlcache")),
+    Rule("steam-dlc", "game-cache", "LOCALAPPDATA", ("Steam", "depot_cache")),
+    Rule("steam-windows", "game-cache", "PROGRAMDATA", ("Steam", "steamapps", "common"), programdata=True),
+    Rule("epic-cache", "game-cache", "LOCALAPPDATA", ("EpicGamesLauncher", "Saved", "webcache")),
+    Rule("epic-crash", "game-cache", "LOCALAPPDATA", ("EpicGamesLauncher", "Saved", "Crashes")),
+    Rule("ubisoft-cache", "game-cache", "LOCALAPPDATA", ("Ubisoft Game Launcher", "cache")),
+    Rule("ubisoft-webcache", "game-cache", "LOCALAPPDATA", ("Ubisoft Game Launcher", "webcache")),
+    Rule("ubisoft-downloads", "game-cache", "LOCALAPPDATA", ("Ubisoft Game Launcher", "downloader")),
+    Rule("ea-cache", "game-cache", "LOCALAPPDATA", ("EA Desktop", "Cache")),
+    Rule("minecraft-cache", "game-cache", "LOCALAPPDATA", ("Packages", "Microsoft.MinecraftUWP")),
+    Rule("battle-net-cache", "game-cache", "LOCALAPPDATA", ("Battle.net", "Cache")),
+    Rule("adobe-cache", "app-cache", "LOCALAPPDATA", ("Adobe", "Adobe ARM", "logs")),
+    Rule("adobe-updater-cache", "app-cache", "LOCALAPPDATA", ("Adobe", "Updater")),
+    Rule("office-ocr-cache", "app-cache", "LOCALAPPDATA", ("Microsoft", "Office", "16.0", "OCR")),
+    Rule("onenote-cache", "app-cache", "LOCALAPPDATA", ("Microsoft", "UWP", "OneNote")),
+    Rule("onedrive-cache", "app-cache", "LOCALAPPDATA", ("Microsoft", "OneDrive", "Cache")),
+    Rule("teams-cache", "app-cache", "LOCALAPPDATA", ("Microsoft", "Teams", "Cache")),
+    Rule("vs-cache", "app-cache", "LOCALAPPDATA", ("Microsoft", "VisualStudio")),
+    Rule("git-credential-cache", "developer-cache", "LOCALAPPDATA", ("GitCredentialManager", "cache")),
+    Rule("jetbrains-cache", "app-cache", "LOCALAPPDATA", ("JetBrains")),
+    Rule("idea-system-cache", "app-cache", "LOCALAPPDATA", ("JetBrains", "IntelliJIdea")),
+    Rule("pycharm-system-cache", "app-cache", "LOCALAPPDATA", ("JetBrains", "PyCharm")),
+    Rule("webstorm-system-cache", "app-cache", "LOCALAPPDATA", ("JetBrains", "WebStorm")),
+    Rule("goland-cache", "app-cache", "LOCALAPPDATA", ("JetBrains", "GoLand")),
+    Rule("clion-cache", "app-cache", "LOCALAPPDATA", ("JetBrains", "CLion")),
+    Rule("rustup-cache", "developer-cache", "LOCALAPPDATA", ("rustup", "dist")),
+    Rule("deno-cache", "developer-cache", "LOCALAPPDATA", ("deno", "deno_dir", "deps")),
+    Rule("swift-cache", "developer-cache", "LOCALAPPDATA", (".swift", "releases")),
+    Rule("pub-cache", "developer-cache", "LOCALAPPDATA", ("pub", "dart_tool", "pubapi")),
+    Rule("scoop-cache", "developer-cache", "APPDATA", ("Local", "scoop")),
+    Rule("winget-cache", "app-cache", "LOCALAPPDATA", ("Packages", "Microsoft.DesktopAppInstaller")),
+    Rule("qt-cache", "developer-cache", "LOCALAPPDATA", ("Qt", "qtwebengine")),
+    Rule("blender-cache", "app-cache", "LOCALAPPDATA", ("Blender Foundation", "Blender")),
+    Rule("unity-cache", "app-cache", "LOCALAPPDATA", ("Unity", "CacheManager")),
+    Rule("unreal-cache", "app-cache", "LOCALAPPDATA", ("UnrealEngine")),
+    Rule("obs-cache", "app-cache", "LOCALAPPDATA", ("obs-studio")),
+    Rule("obs-studio-recordings", "app-cache", "LOCALAPPDATA", ("obs-studio", "basic", "recordings")),
+    Rule("spotify-cache", "app-cache", "LOCALAPPDATA", ("Spotify", "Data")),
+    Rule("spotify-browser-cache", "app-cache", "LOCALAPPDATA", ("Spotify", "Browser")),
+    Rule("zoom-cache", "app-cache", "LOCALAPPDATA", ("Zoom")),
+    Rule("dingtalk-cache", "app-cache", "LOCALAPPDATA", ("DingTalk")),
+    Rule("wps-cache", "app-cache", "LOCALAPPDATA", ("Kingsoft", "WPS", "Office")),
+    Rule("bandizip-cache", "app-cache", "LOCALAPPDATA", ("Bandizip")),
+    Rule("7zip-cache", "app-cache", "LOCALAPPDATA", ("7-Zip")),
+    Rule("notion-cache", "app-cache", "LOCALAPPDATA", ("Notion")),
+    Rule("figma-cache", "app-cache", "LOCALAPPDATA", ("Figma", "Cache")),
+    Rule("slack-cache", "app-cache", "LOCALAPPDATA", ("Slack", "Cache")),
+    Rule("telegram-cache", "app-cache", "LOCALAPPDATA", ("Telegram Desktop", "tdata", "emoji")),
+    Rule("tencent-qq-cache", "app-cache", "LOCALAPPDATA", ("Tencent", "QQ")),
+    Rule("baidu-disk-cache", "app-cache", "LOCALAPPDATA", ("Baidu", "YourFileX", "Cache")),
+    Rule("aliyun-drive-cache", "app-cache", "LOCALAPPDATA", ("AliyunDrive")),
 )
 
 
@@ -484,10 +542,19 @@ def main() -> int:
     parser.add_argument("--large-max-seconds", type=int, default=30, help="Time budget for large-path inspection.")
     parser.add_argument("--min-age-days", type=int, default=7, help="Only include items at least this many days old.")
     parser.add_argument("--report", default="cleanup-report.json", help="Write JSON report to this path.")
+    parser.add_argument("--full-scan", action="store_true", help="Full AppData scan like SpaceSniffer: scan all of LocalAppData and RoamingAppData, report all items >=1MB.")
     args = parser.parse_args()
 
     if os.name != "nt":
         raise SystemExit("This cleaner is intended for Windows only.")
+    
+    if args.full_scan:
+        args.large_path = [env_path("LOCALAPPDATA"), env_path("APPDATA")]
+        args.large_path = [str(p) for p in args.large_path if p]
+        args.min_size_mb = 1
+        args.top = 10000
+        args.large_max_seconds = 300
+    
     if args.min_age_days < 0:
         raise SystemExit("--min-age-days cannot be negative.")
     if args.min_size_mb < 0:

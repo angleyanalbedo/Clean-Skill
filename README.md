@@ -35,31 +35,53 @@ python scripts/safe_clean_windows.py --execute --yes --report cleanup-report.jso
 
 ## 📖 Usage Examples
 
-### Find Large Files (SpaceSniffer-like)
+**Important:** Focus on `%LOCALAPPDATA%` and `%APPDATA%` for meaningful cleanup. `%TEMP%` is typically small (<100MB) and not worth scanning.
+
+### Discover and Analyze Cache Directories
 
 ```powershell
-# Scan LocalAppData for items > 512MB
+# Step 1: Discover all cache directories in AppData
+python scripts/safe_clean_windows.py --discover-caches --report discovered.json
+
+# Step 2: Find large items (>100MB) taking up space
+python scripts/safe_clean_windows.py `
+  --large-path "$env:LOCALAPPDATA" `
+  --min-size-mb 100 `
+  --report large-caches.json
+
+# Step 3: Review and clean specific large caches
+python scripts/safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\MyApp\cache" --report cleanup.json
+```
+
+### Clean Developer Tool Caches
+
+```powershell
+# Clean npm, pip, yarn, cargo, gradle caches
+python scripts/safe_clean_windows.py --report dev-cache.json
+
+# Execute with confirmation
+python scripts/safe_clean_windows.py --execute --yes --report dev-cache.json
+```
+
+### Clean Game Launcher Caches
+
+```powershell
+# Clean Ubisoft, Steam, Epic launcher caches
+python scripts/safe_clean_windows.py --include-programdata --report game-cache.json
+
+# Scan specific game cache
+python scripts/safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\Ubisoft Game Launcher\cache" --report ubisoft.json
+```
+
+### SpaceSniffer-like Analysis
+
+```powershell
+# Find largest directories in AppData
 python scripts/safe_clean_windows.py `
   --large-path "$env:LOCALAPPDATA" `
   --min-size-mb 512 `
-  --report large-files.json
-
-# Scan entire user profile for items > 1GB
-python scripts/safe_clean_windows.py `
-  --large-path "$env:USERPROFILE" `
-  --min-size-mb 1024 `
   --large-max-seconds 60 `
-  --report large-files.json
-```
-
-### Clean Old Temporary Files
-
-```powershell
-# Clean files older than 30 days
-python scripts/safe_clean_windows.py --min-age-days 30 --report old-files.json
-
-# Execute with confirmation
-python scripts/safe_clean_windows.py --min-age-days 30 --execute --yes --report old-files.json
+  --report space-analysis.json
 ```
 
 ### Developer Cache Cleanup

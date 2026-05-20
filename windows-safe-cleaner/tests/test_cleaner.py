@@ -230,11 +230,13 @@ class TestRules(TestCase):
 
     def test_rules_cover_common_caches(self):
         categories = {rule.category for rule in RULES}
-        self.assertIn("temp", categories)
+        self.assertIn("cache", categories)
         self.assertIn("crash", categories)
         self.assertIn("shader", categories)
         self.assertIn("developer-cache", categories)
-        self.assertIn("launcher-cache", categories)
+        self.assertIn("browser-cache", categories)
+        self.assertIn("game-cache", categories)
+        self.assertIn("app-cache", categories)
 
     def test_rules_cover_developer_tools(self):
         rule_names = {rule.name for rule in RULES}

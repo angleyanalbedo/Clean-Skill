@@ -31,14 +31,35 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --execute --yes --repo
 
 ## Cleanup Scope
 
-Default scope is the current Windows user only:
+Focus on **AppData cache directories** - this is where the real disk space is consumed.
 
-- `%TEMP%`
-- `%LOCALAPPDATA%\Temp`
-- known app cache folders below `%LOCALAPPDATA%`
-- known launcher cache folders, including Ubisoft Connect cache locations when present
-- developer tool caches, including `uv`, `pip`, `npm`, `pnpm`, `yarn`, `NuGet`, `Cargo`, and `Gradle`
-- logs, crash dumps, thumbnail caches, GPU/shader/code caches
+**Default rules cover 77+ common cache locations** across these categories:
+
+**Browser Caches:**
+- Chrome, Edge, Firefox
+
+**Game Launchers:**
+- Steam, Epic, Ubisoft, EA, Battle.net, Minecraft
+
+**Developer Tools:**
+- npm, yarn, pnpm, pip, uv, Cargo, Gradle, NuGet
+- Rustup, Deno, Swift, Dart pub, Go modules
+- VS Code, JetBrains IDEs, Visual Studio, Qt
+
+**Microsoft Apps:**
+- OneDrive, Teams, Office, OneNote
+
+**Communication Apps:**
+- Discord, Slack, Zoom, DingTalk, Telegram, QQ
+
+**Media Apps:**
+- Spotify, OBS, Figma, Notion
+
+**Utilities:**
+- Adobe, WPS, 7-Zip, Bandizip, OBS
+
+**System:**
+- Windows Error Reports, Shader caches, Thumbnail caches
 
 Do not clean `%PROGRAMDATA%` unless the user asks and understands it may require administrator permissions:
 
@@ -52,10 +73,21 @@ For a specific suspected cache path, use `--extra-path` only after checking it i
 python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "C:\path\to\cache" --report .\cleanup-report.json
 ```
 
-For broader AppData discovery, use `--discover-caches` in dry-run first. This searches for cache-like directory names under user AppData roots and still applies protected-path, age, and reparse-point checks:
+**Recommended Workflow for Finding Large Caches:**
 
+1. Discover all cache directories first:
 ```powershell
-python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report .\cleanup-report.json
+python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report discovered.json
+```
+
+2. Find large items in AppData:
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 100 --report large-caches.json
+```
+
+3. Scan specific large cache directories:
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\MyApp\cache" --report cleanup.json
 ```
 
 ## Large File Detection & Classification
@@ -81,9 +113,26 @@ The cleaner automatically classifies large files based on extension and path:
 
 ## Large File Cleanup Commands
 
-**Find large items in AppData (SpaceSniffer-like):**
+**SpaceSniffer-style Full Scan (Recommended):**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --full-scan --report .\full-scan-report.json
+```
+
+This scans entire LocalAppData and RoamingAppData, reports ALL items >= 1MB (up to 10000 items), and classifies each by safety level.
+
+**Find large items in specific path:**
 ```powershell
 python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 512 --report .\cleanup-report.json
+```
+
+**Custom full scan:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --large-path "$env:APPDATA" --min-size-mb 1 --top 10000 --report .\cleanup-report.json
+```
+
+**After reviewing the report, clean specific paths:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --extra-path "$env:LOCALAPPDATA\Chrome\Cache" --extra-path "$env:LOCALAPPDATA\discord" --execute --yes --report .\cleanup-report.json
 ```
 
 **Find large items in entire user profile:**
@@ -115,12 +164,12 @@ python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --la
 
 ## Common Requests
 
-- "Clean AppData junk": dry-run default user scope, then ask before execute.
-- "Remove leftovers after uninstalling software": scan first; if a leftover vendor directory contains configs, saves, licenses, or databases, do not delete automatically.
-- "Clean Rainbow Six / Ubisoft download cache": scan known Ubisoft cache paths; if the user gives a custom launcher/download cache path, add it with `--extra-path` and dry-run first.
-- "Clean uv/pip/npm caches": use the default scan; developer cache rules are allowlisted and still age-gated.
-- "Find what is taking space like SpaceSniffer": use `--large-path` and summarize `large_items` by size and classification; do not delete arbitrary large files automatically.
-- "Just delete it": still run dry-run first unless the user provides a recent report and explicit approval.
+- "C盘满了/什么占用了最多空间": use `--discover-caches` and `--large-path "$env:LOCALAPPDATA"` to find large cache directories, summarize by size.
+- "Clean browser/app cache": scan AppData for known cache paths; do not delete configs, cookies, or saved passwords.
+- "Remove leftovers after uninstalling software": use `--discover-caches` to find orphaned cache directories; if a directory contains configs, saves, licenses, or databases, do not delete automatically.
+- "Clean Rainbow Six / Ubisoft / Steam cache": scan known launcher cache paths; if the user provides a custom path, use `--extra-path` and dry-run first.
+- "Clean uv/pip/npm/cargo caches": use the default scan; developer cache rules are allowlisted and still age-gated.
+- "Just clean everything": still run dry-run first; use `--discover-caches` to find all cache-like directories.
 
 ## Reporting Expectations
 
