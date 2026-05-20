@@ -9,6 +9,8 @@ from scripts.safe_clean_windows import (
     CACHE_DIR_NAMES,
     HIGH_RISK_PARTS,
     RULES,
+    SAFE_EXTENSIONS,
+    LARGE_FILE_EXTENSIONS,
     classify_large_item,
     discover_cache_roots,
     env_path,
@@ -65,9 +67,9 @@ class TestRiskDetection(TestCase):
     def test_has_high_risk_part(self):
         high_risk_paths = [
             Path("/home/test/documents/config"),
-            Path("/home/test/save.dat"),
-            Path("/home/test/appdata/roaming/license.key"),
-            Path("/home/test/appdata/local/profile/settings"),
+            Path("/home/test/profile/settings"),
+            Path("/home/test/appdata/roaming/license"),
+            Path("/home/test/appdata/local/profiles"),
         ]
         for path in high_risk_paths:
             self.assertTrue(has_high_risk_part(path), f"Expected {path} to be high risk")
@@ -110,15 +112,21 @@ class TestOlderThan(TestCase):
             temp_path.unlink()
 
     def test_older_than_old_file(self):
-        with tempfile.NamedTemporaryFile(delete=False) as f:
-            f.write(b"test")
+        with tempfile.NamedTemporaryFile(delete=False, mode='w') as f:
+            f.write("test")
             temp_path = Path(f.name)
-            old_time = time.time() - (30 * 24 * 60 * 60)
-            os.utime(temp_path, (old_time, old_time))
+            f.flush()
+            os.fsync(f.fileno())
+        
+        old_timestamp = time.time() - (30 * 24 * 60 * 60)
+        os.utime(temp_path, (old_timestamp, old_timestamp))
         
         try:
-            now = time.time()
-            self.assertTrue(older_than(temp_path, 7, now))
+            current_time = time.time()
+            mtime = temp_path.stat().st_mtime
+            age_days = (current_time - mtime) / 86400
+            self.assertTrue(older_than(temp_path, 7, current_time), 
+                          f"File age {age_days:.1f} days should be > 7 days")
         finally:
             temp_path.unlink()
 
@@ -187,7 +195,7 @@ class TestClassifyLargeItem(TestCase):
             temp_path.write_text("test")
             action, reason = classify_large_item(temp_path)
             self.assertEqual(action, "review-temp")
-            self.assertIn("temporary/log/dump-like file extension", reason)
+            self.assertIn("temporary/dump/backup-like", reason)
 
 
 class TestDiscoverCacheRoots(TestCase):
@@ -257,6 +265,66 @@ class TestHighRiskParts(TestCase):
     def test_user_data_parts_present(self):
         user_data = {"desktop", "documents", "downloads", "music", "pictures", "videos", "onedrive"}
         self.assertTrue(HIGH_RISK_PARTS & user_data)
+
+
+class TestLargeFileExtensions(TestCase):
+    def test_large_extensions_contain_common_temp_types(self):
+        temp_extensions = {".log", ".tmp", ".bak", ".old", ".dmp", ".cache"}
+        self.assertTrue(LARGE_FILE_EXTENSIONS & temp_extensions)
+
+    def test_large_extensions_contain_browser_downloads(self):
+        browser_extensions = {".part", ".partial", ".crdownload", ".ytdl"}
+        self.assertTrue(LARGE_FILE_EXTENSIONS & browser_extensions)
+
+    def test_large_extensions_are_lowercase(self):
+        for ext in LARGE_FILE_EXTENSIONS:
+            self.assertEqual(ext, ext.lower(), f"Extension {ext} should be lowercase")
+
+
+class TestSafeExtensions(TestCase):
+    def test_safe_extensions_contain_media_types(self):
+        media_extensions = {".png", ".jpg", ".mp3", ".mp4", ".avi"}
+        self.assertTrue(SAFE_EXTENSIONS & media_extensions)
+
+    def test_safe_extensions_contain_documents(self):
+        doc_extensions = {".pdf", ".doc", ".docx", ".xls", ".xlsx"}
+        self.assertTrue(SAFE_EXTENSIONS & doc_extensions)
+
+    def test_safe_extensions_are_lowercase(self):
+        for ext in SAFE_EXTENSIONS:
+            self.assertEqual(ext, ext.lower(), f"Extension {ext} should be lowercase")
+
+
+class TestClassifyLargeItemEnhanced(TestCase):
+    def test_classify_large_temp_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            temp_file = Path(tmpdir) / "old_data.log"
+            temp_file.write_text("test")
+            action, reason = classify_large_item(temp_file)
+            self.assertEqual(action, "review-temp")
+            self.assertIn("temporary/dump/backup-like", reason)
+
+    def test_classify_large_backup_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            backup_file = Path(tmpdir) / "backup.bak"
+            backup_file.write_text("test")
+            action, reason = classify_large_item(backup_file)
+            self.assertEqual(action, "review-temp")
+
+    def test_classify_safe_document_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            pdf_file = Path(tmpdir) / "document.pdf"
+            pdf_file.write_text("test")
+            action, reason = classify_large_item(pdf_file)
+            self.assertEqual(action, "skip")
+            self.assertIn("important file type", reason)
+
+    def test_classify_safe_media_file(self):
+        with tempfile.TemporaryDirectory() as tmpdir:
+            media_file = Path(tmpdir) / "video.mp4"
+            media_file.write_text("test")
+            action, reason = classify_large_item(media_file)
+            self.assertEqual(action, "skip")
 
 
 if __name__ == "__main__":
