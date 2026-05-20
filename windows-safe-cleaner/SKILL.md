@@ -58,10 +58,47 @@ For broader AppData discovery, use `--discover-caches` in dry-run first. This se
 python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --report .\cleanup-report.json
 ```
 
-For a SpaceSniffer-like size review, inspect large direct children of a path. This only reports large files/directories and never adds arbitrary large items to the deletion plan:
+## Large File Detection & Classification
 
+The cleaner automatically classifies large files based on extension and path:
+
+**Likely Safe to Delete (review-temp):**
+- `.log`, `.tmp`, `.temp`, `.bak`, `.old` - temporary and backup files
+- `.dmp`, `.dump`, `.etl` - crash dumps and event traces
+- `.cache`, `.ds_store`, `.thumbs.db` - system caches
+- `.part`, `.partial`, `.crdownload` - incomplete downloads
+- `.swp`, `.swo`, `.~` - editor temporary files
+
+**NEVER Delete Automatically (skip):**
+- `.pdf`, `.doc`, `.docx`, `.xls`, `.xlsx` - documents
+- `.png`, `.jpg`, `.mp3`, `.mp4`, `.avi` - media files
+- `.exe`, `.dll`, `.sys`, `.msi` - system files
+- `.zip`, `.rar`, `.7z` - archives
+
+**Requires Manual Review:**
+- Unknown extensions outside cache directories
+- Files in high-risk paths (save games, profiles, configs)
+
+## Large File Cleanup Commands
+
+**Find large items in AppData (SpaceSniffer-like):**
 ```powershell
-python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 512 --large-max-seconds 30 --report .\cleanup-report.json
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:LOCALAPPDATA" --min-size-mb 512 --report .\cleanup-report.json
+```
+
+**Find large items in entire user profile:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --large-path "$env:USERPROFILE" --min-size-mb 1024 --large-max-seconds 60 --report .\cleanup-report.json
+```
+
+**Clean only very old temp files (30+ days):**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --min-age-days 30 --execute --yes --report .\cleanup-report.json
+```
+
+**Dry-run with detailed large file analysis:**
+```powershell
+python windows-safe-cleaner\scripts\safe_clean_windows.py --discover-caches --large-path "$env:LOCALAPPDATA" --min-size-mb 100 --report .\cleanup-report.json
 ```
 
 ## Safety Defaults

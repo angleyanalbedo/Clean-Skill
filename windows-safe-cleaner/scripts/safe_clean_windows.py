@@ -194,20 +194,46 @@ def path_size_limited(path: Path, deadline: float) -> tuple[int, bool]:
         return 0, False
 
 
+LARGE_FILE_EXTENSIONS = {
+    ".log", ".tmp", ".temp", ".dmp", ".dump", ".etl",
+    ".bak", ".old", ".cache", ".tmpy", ".~",
+    ".swp", ".swo", ".ds_store", ".thumbs.db",
+    ".ico", ".win", ".lst", ".err", ".crdownload",
+    ".part", ".partial", ".ytdl",
+}
+
+SAFE_EXTENSIONS = {
+    ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".webp",
+    ".mp3", ".mp4", ".avi", ".mov", ".mkv", ".webm",
+    ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2",
+    ".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx",
+    ".exe", ".dll", ".sys", ".msi",
+}
+
+
 def classify_large_item(path: Path) -> tuple[str, str]:
     if has_reparse_point(path):
         return "skip", "reparse point or symlink"
     if is_protected_exact(path, protected_roots()):
         return "skip", "protected root"
+    
     leaf = path.name.lower()
     parent = path.parent.name.lower()
+    
     if leaf in CACHE_DIR_NAMES or parent in CACHE_DIR_NAMES:
         return "review-cache", "cache-like name; review before deleting"
+    
     if has_high_risk_part(path):
         return "manual-review", "high-risk name; likely user data, config, saves, or credentials"
+    
     suffix = path.suffix.lower()
-    if suffix in {".log", ".tmp", ".dmp", ".etl", ".bak", ".old"}:
-        return "review-temp", "temporary/log/dump-like file extension"
+    
+    if suffix in LARGE_FILE_EXTENSIONS:
+        return "review-temp", "temporary/dump/backup-like file extension; likely safe to delete"
+    
+    if suffix in SAFE_EXTENSIONS:
+        return "skip", "likely important file type; do not delete automatically"
+    
     return "manual-review", "large item outside cleanup allowlist"
 
 
